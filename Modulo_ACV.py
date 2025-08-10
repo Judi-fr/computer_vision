@@ -21,14 +21,27 @@ class handDetector():
 
     def findHands(self, img):
         imgRGB = cv2.cvtColor(img,cv2.COLOR_BGR2RGB) #cambia img a rgb xq mediapipe soporta solo rgb
-        resultados = self.hands.process(imgRGB)
+        self.resultados = self.hands.process(imgRGB)
         
-        if resultados.multi_hand_landmarks:
-            for mano in resultados.multi_hand_landmarks:
+        if self.resultados.multi_hand_landmarks:
+            for mano in self.resultados.multi_hand_landmarks:
                 self.mpDibujo.draw_landmarks(img, mano,self.mpSolution.HAND_CONNECTIONS)
         
         return img
 
+    def findPosition(self, img, handNo=0, draw=True):
+        lmList = []
+        if self.resultados.multi_hand_landmarks:
+            myHand = self.resultados.multi_hand_landmarks[handNo]
+            for id, lm in enumerate(myHand.landmark):
+                # print(id, lm)
+                height, width, c = img.shape
+                cx, cy = int(lm.x * width), int(lm.y * height)
+                # print(id, cx, cy)
+                lmList.append([id, cx, cy])
+                if draw:
+                    cv2.circle(img, (cx, cy), 15, (255, 0, 255), cv2.FILLED)
+        return lmList
 
 def main():
 
@@ -42,13 +55,17 @@ def main():
     while True:
         
         sincronizado, img = cap.read()
-    
-        img = detector.findHands(img)
 
         if not sincronizado:
             print("No se pudo establecer conexion con la camara.")
             break
-    
+        
+        img = detector.findHands(img)
+        lmList = detector.findPosition(img)
+        
+        if len(lmList) != 0:
+            print(lmList[4])
+
         HoraAct = time.time()
         fps = 1 / (HoraAct-HoraAnt)
         HoraAnt = HoraAct
@@ -60,5 +77,5 @@ def main():
         cv2.waitKey(1)
 
 
-
-main()
+if __name__ == "__main__":
+    main()
